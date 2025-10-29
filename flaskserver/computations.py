@@ -31,11 +31,13 @@ def loadvector():
     with open(content_path, "w") as file:
         file.write(content)
 
+
 def runpipeline(path):
     global iid
     getimage(path)
     loadimage()
     loadvector()
+    iid += 1
 
 def getcaption():
     pass
