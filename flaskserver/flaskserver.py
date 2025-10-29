@@ -1,12 +1,12 @@
-from flask import Flask
+from flask import Flask, request
 import computations
-
 
 app = Flask(__name__)
 state = {"caption": "", "image": None}
 
 @app.route("/loadimage")
-def loadimage(path):
+def loadimage():
+    path = request.args.get("path")
     return computations.runpipeline(path)
 
 @app.route("/returncaption")
