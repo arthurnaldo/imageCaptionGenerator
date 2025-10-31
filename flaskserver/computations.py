@@ -1,12 +1,17 @@
 from PIL import Image
 from sentence_transformers import SentenceTransformer
 import os
+import get_database
 
 model = SentenceTransformer('clip-ViT-B-32')
 iid = 0
 image_folder = os.path.join(os.path.dirname(__file__), "..", "storage")
 curr_folder = None
+database = get_database.get_database()
+content = ""
 image = None
+
+print(database)
 
 def getimage(path):
     global image
@@ -24,6 +29,7 @@ def loadimage():
 
 def loadvector():
     global curr_folder
+    global content
     img_path = os.path.join(image_folder, curr_folder, f"image{iid}.png")
     emb = model.encode([Image.open(img_path)], convert_to_tensor=False, normalize_embeddings=True)
     content = str(emb[0].tolist())
@@ -31,12 +37,23 @@ def loadvector():
     with open(content_path, "w") as file:
         file.write(content)
 
+def insert_into_database():
+    response = (
+        database.table("image_embeddings")
+        .insert({"id": iid, "embedding": content})
+        .execute()
+    )
+
+def decodevector():
+    pass
+
 
 def runpipeline(path):
     global iid
     getimage(path)
     loadimage()
     loadvector()
+    insert_into_database()
     iid += 1
 
 def getcaption():
