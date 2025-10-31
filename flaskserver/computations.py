@@ -1,60 +1,43 @@
 from PIL import Image
 from sentence_transformers import SentenceTransformer
 import os
+from io import BytesIO
+import base64
 import get_database
 
 model = SentenceTransformer('clip-ViT-B-32')
-iid = 0
-image_folder = os.path.join(os.path.dirname(__file__), "..", "storage")
-curr_folder = None
 database = get_database.get_database()
-content = ""
-image = None
 
-print(database)
+session_data = {"iid": 0, "content": "", "png_b64": None, "image": None}
+
 
 def getimage(path):
-    global image
-    image = Image.open(path)
+    session_data["image"] = Image.open(path)
 
-def loadimage():
-    global curr_folder
-    filename = f"image{iid}.png"
-    foldername = f"folder{iid}"
-    curr_folder = foldername
-    target_dir = os.path.join(image_folder, foldername)
-    os.makedirs(target_dir, exist_ok=True)
-    full_path = os.path.join(target_dir, filename)
-    image.save(full_path)
+def image2base64():
+    buf = BytesIO()
+    session_data["image"].save(buf, format="PNG")  
+    png_bytes = buf.getvalue()   
+    session_data["png_b64"] = base64.b64encode(png_bytes).decode("ascii")
 
 def loadvector():
-    global curr_folder
-    global content
-    img_path = os.path.join(image_folder, curr_folder, f"image{iid}.png")
-    emb = model.encode([Image.open(img_path)], convert_to_tensor=False, normalize_embeddings=True)
-    content = str(emb[0].tolist())
-    content_path = os.path.join(image_folder, curr_folder, f"embedding{iid}.txt")
-    with open(content_path, "w") as file:
-        file.write(content)
+    emb = model.encode(image, convert_to_tensor=False, normalize_embeddings=True)
+    session_data["content"] = str(emb.tolist())
 
 def insert_into_database():
     response = (
         database.table("image_embeddings")
-        .insert({"id": iid, "embedding": content})
+        .insert({"id": session_data["iid"], "embedding": session_data["content"], "imagebase64": session_data["png_b64"]})
         .execute()
     )
 
-def decodevector():
+def getcaption():
     pass
-
 
 def runpipeline(path):
     global iid
     getimage(path)
-    loadimage()
+    image2base64()
     loadvector()
     insert_into_database()
     iid += 1
-
-def getcaption():
-    pass
