@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome Page</title>
+    <script src="/index.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const uname = await getUsername();  // getUsername() should return a string
+            document.getElementById('welcome').textContent = `Welcome ${uname}`;
+        });
+        </script>
+</head>
+<body>
+    <p id="welcome">Welcome</p>
+</body>
+</html>
