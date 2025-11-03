@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 import os
 from io import BytesIO
 import base64
+import json
 import get_database
 
 model = SentenceTransformer('clip-ViT-B-32')
@@ -41,3 +42,24 @@ def runpipeline(path):
     loadvector()
     insert_into_database()
     iid += 1
+
+def login(user, password):
+    #if user does not exist in database, we create a new user pass combo
+    response = (
+        database.table("auth").select("password").eq("username", user)
+        .execute()
+    )
+
+    if len(response.data) == 0:
+        response = (
+            database.table("auth")
+            .insert({"username": user, "password": password})
+            .execute()
+        )
+        return "new account created", 200
+
+    #if user does exist in database, we check if valid pass
+    if password == response.data[0]["password"]:
+        return "login successful", 200
+
+    return "incorrect password", 404

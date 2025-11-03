@@ -1,9 +1,31 @@
-from flask import Flask, request
+from flask import Flask, request, redirect
 import computations
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="../client/src", static_url_path="")
 state = {"caption": "", "image": None}
+auth_state = {"username": None, "password": None}
+
+@app.route("/login", methods=['POST'])
+def auth():
+    if auth_state["username"]:
+        return "already logged in", 404
+    
+    auth_state["username"] = request.form.get("uname")
+    auth_state["password"] = request.form.get("psw")
+
+    payload, status = computations.login(auth_state["username"], auth_state["password"])
+    if status >= 400: #is 404
+        return payload, status
+
+    return redirect("usercaptions.html")
+
+
+@app.route("/getusername")
+def getusername():
+    if not auth_state["username"]:
+        return "Username not found", 404
+    return auth_state["username"]
 
 @app.route("/loadimage")
 def loadimage():
